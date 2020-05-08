@@ -3,7 +3,7 @@
 
 * How to build
 
-Install =cargo= (Rust package manager). Then run the follwing:
+Install =cargo= (Rust package manager). Then run the following:
 
 #+BEGIN_SRC bash
 1. git clone https://gitlab.com/knarkzel/flappybird
