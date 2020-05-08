@@ -1,0 +1,14 @@
+#+title: AI plays Flappy Bird
+#+author: Odd-Harald Lillestø Myhren
+
+* How to build
+
+Install =cargo= (Rust package manager). Then run the follwing:
+
+#+BEGIN_SRC bash
+1. git clone https://gitlab.com/knarkzel/flappybird
+2. cd flappybird/
+3. cargo run --release
+#+END_SRC
+
+[[./game.png]]
