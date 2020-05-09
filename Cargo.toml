@@ -8,3 +8,4 @@ edition = "2018"
 ggez = "0.5.1" # A lightweight game framework for making 2D games with minimum friction, inspired by Love2D.
 mint = "0.5.5" # Math interoperability standard types
 rand = "0.7.3" # Random number generators and other randomness functionality.
+ndarray = "0.13.1" # An n-dimensional array for general elements and for numerics. Lightweight array views and slicing; views …

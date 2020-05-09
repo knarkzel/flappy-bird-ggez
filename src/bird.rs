@@ -1,16 +1,18 @@
 use super::pipe::*;
+use super::neuralnetwork::*;
 use ggez::{graphics, Context, GameResult};
 
-pub struct Bird {
+pub struct Bird<'a> {
     pub x: f32,
     pub y: f32,
     pub vel: f32,
     pub width: f32,
     pub height: f32,
+    pub brain: NeuralNetwork<'a>,
 }
 
-impl Bird {
-    pub fn new() -> Bird {
+impl<'a> Bird<'a> {
+    pub fn new() -> Bird<'a> {
         let width = 48.;
         let height = 48.;
         Bird {
@@ -19,6 +21,7 @@ impl Bird {
             vel: 0.,
             width,
             height,
+            brain: NeuralNetwork::new(3, 4, 1),
         }
     }
     pub fn jump(&mut self) {
