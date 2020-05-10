@@ -1,7 +1,5 @@
 use game_prototype::bird::*;
 use game_prototype::pipe::*;
-use ggez::input::keyboard;
-use ggez::input::keyboard::KeyCode;
 use ggez::event::{self, EventHandler};
 use ggez::{graphics, Context, ContextBuilder, GameResult};
 
@@ -32,18 +30,14 @@ impl Game {
             Pipes::new(600.),
             Pipes::new(800.),
         ];
-        birds[0].jump();
         Game { birds, pipes }
     }
 }
 
 impl EventHandler for Game {
-    fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
+    fn update(&mut self, _: &mut Context) -> GameResult<()> {
         for bird in self.birds.iter_mut() {
-            bird.update(&self.pipes[0].pipe[1]);
-            // if keyboard::is_key_pressed(ctx, KeyCode::Space) {
-            //     bird.jump();
-            // }
+            bird.update(&self.pipes[0].pipe[0], &self.pipes[0].pipe[1]);
         }
         for pipes in self.pipes.iter_mut() {
             pipes.update();

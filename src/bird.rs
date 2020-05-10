@@ -2,17 +2,17 @@ use super::pipe::*;
 use super::neuralnetwork::*;
 use ggez::{graphics, Context, GameResult};
 
-pub struct Bird<'a> {
+pub struct Bird {
     pub x: f32,
     pub y: f32,
     pub vel: f32,
     pub width: f32,
     pub height: f32,
-    pub brain: NeuralNetwork<'a>,
+    pub brain: NeuralNetwork,
 }
 
-impl<'a> Bird<'a> {
-    pub fn new() -> Bird<'a> {
+impl Bird {
+    pub fn new() -> Bird {
         let width = 48.;
         let height = 48.;
         Bird {
@@ -21,20 +21,26 @@ impl<'a> Bird<'a> {
             vel: 0.,
             width,
             height,
-            brain: NeuralNetwork::new(3, 4, 1),
+            brain: NeuralNetwork::new(4, 6, 1),
         }
     }
     pub fn jump(&mut self) {
         self.vel = 6.;
     }
-    pub fn update(&mut self, pipe: &Pipe) {
+    pub fn update(&mut self, pipe_top: &Pipe, pipe_bottom: &Pipe) {
         if self.vel > -13. {
             self.vel -= 0.30;
         }
         self.y -= self.vel;
-        if self.y + self.height / 2. > pipe.y - 48. {
-            self.jump();
-        }
+        // if self.y + self.height / 2. > pipe.y - 48. {
+        //     self.jump();
+        // }
+
+        // neural network stuff
+        self.brain.set_input(0, self.y / 600.);
+        self.brain.set_input(1, (pipe_top.y + pipe_top.height) / 600.);
+        self.brain.set_input(2, pipe_bottom.y / 600.);
+        self.brain.set_input(3, (self.vel + 13.) / 19.);
     }
     pub fn render(&self, ctx: &mut Context) -> GameResult<()> {
         let rect = graphics::Rect::new(self.x, self.y, self.width, self.height);
