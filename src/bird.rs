@@ -1,13 +1,17 @@
 use super::pipe::*;
 use super::neuralnetwork::*;
+use rand::Rng;
 use ggez::{graphics, Context, GameResult};
 
+#[derive(Clone, Debug)]
 pub struct Bird {
     pub x: f32,
     pub y: f32,
     pub vel: f32,
     pub width: f32,
     pub height: f32,
+    pub fitness: i32,
+    pub exist: bool,
     pub brain: NeuralNetwork,
 }
 
@@ -15,12 +19,16 @@ impl Bird {
     pub fn new() -> Bird {
         let width = 48.;
         let height = 48.;
+        let mut rng = rand::thread_rng();
+        let y = rng.gen_range(48. * 2., 600. - (48. * 3.));
         Bird {
             x: 30.,
-            y: 600. / 2. - width,
+            y,
             vel: 0.,
             width,
             height,
+            fitness: 0,
+            exist: true,
             brain: NeuralNetwork::new(4, 6, 1),
         }
     }
@@ -32,15 +40,22 @@ impl Bird {
             self.vel -= 0.30;
         }
         self.y -= self.vel;
-        // if self.y + self.height / 2. > pipe.y - 48. {
-        //     self.jump();
-        // }
+        self.fitness += 1;
 
         // neural network stuff
-        self.brain.set_input(0, self.y / 600.);
+        //  set inputs
+        self.brain.set_input(0, (self.y / 600.).abs());
         self.brain.set_input(1, (pipe_top.y + pipe_top.height) / 600.);
         self.brain.set_input(2, pipe_bottom.y / 600.);
         self.brain.set_input(3, (self.vel + 13.) / 19.);
+
+        // process through network
+        self.brain.predict();
+
+        // get output
+        if self.brain.get_output(0) >= 0.5 {
+            self.jump();
+        }
     }
     pub fn render(&self, ctx: &mut Context) -> GameResult<()> {
         let rect = graphics::Rect::new(self.x, self.y, self.width, self.height);
