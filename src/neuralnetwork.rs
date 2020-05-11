@@ -13,6 +13,8 @@ impl NeuralNetwork {
         layers.push(create_layer(hiddens, outputs));
         layers.push(create_layer(outputs, 0));
 
+        println!("{:?}", layers);
+
         NeuralNetwork {
             layers,
         }
@@ -41,6 +43,18 @@ impl NeuralNetwork {
             for (i, data) in data.iter().enumerate() {
                 let current_layer = &mut self.layers[layer];
                 current_layer[i].data = *data;
+            }
+        }
+    }
+    pub fn mutate(&mut self) {
+        let mut rng = rand::thread_rng();
+        for layer in 1..self.layers.len() {
+            for node in self.layers[layer].iter_mut() {
+                for i in 0..node.weights.len() {
+                    if rng.gen_range(0., 1.) > 0.5 {
+                        node.weights[i] = (node.weights[i] + rng.gen_range(0., 1.)).max(0.).min(1.);
+                    }
+                }
             }
         }
     }
