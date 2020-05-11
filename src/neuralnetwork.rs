@@ -15,9 +15,7 @@ impl NeuralNetwork {
 
         // println!("{:?}", layers);
 
-        NeuralNetwork {
-            layers,
-        }
+        NeuralNetwork { layers }
     }
     pub fn get(&self, layer_index: usize, node_index: usize) -> f32 {
         let layer = &self.layers[layer_index];
@@ -61,7 +59,12 @@ impl NeuralNetwork {
             }
         }
     }
-    fn get_weighted(&self, to_node_index: usize, layer_index: usize, from_node_index: usize) -> f32 {
+    fn get_weighted(
+        &self,
+        to_node_index: usize,
+        layer_index: usize,
+        from_node_index: usize,
+    ) -> f32 {
         let layer = &self.layers[layer_index];
         let data = layer[from_node_index].data;
         let weight = layer[from_node_index].weights[to_node_index];
@@ -77,16 +80,21 @@ struct Node {
 
 impl Node {
     fn new(weights: Vec<f32>) -> Node {
-        Node {
-            data: 0.,
-            weights,
-        }
+        Node { data: 0., weights }
     }
 }
 
 fn create_layer(amount: usize, next_layer_amount: usize) -> Vec<Node> {
     let mut rng = rand::thread_rng();
-    (0..amount).map(|_| Node::new((0..next_layer_amount).map(|_| rng.gen_range(-1., 1.)).collect())).collect()
+    (0..amount)
+        .map(|_| {
+            Node::new(
+                (0..next_layer_amount)
+                    .map(|_| rng.gen_range(-1., 1.))
+                    .collect(),
+            )
+        })
+        .collect()
 }
 
 fn sigmoid(x: f32) -> f32 {

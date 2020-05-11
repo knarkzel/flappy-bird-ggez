@@ -1,7 +1,7 @@
-use super::pipe::*;
 use super::neuralnetwork::*;
+use super::pipe::*;
+use ggez::{graphics, mint, Context, GameResult};
 use rand::Rng;
-use ggez::{graphics, Context, GameResult};
 
 #[derive(Clone, Debug)]
 pub struct Bird {
@@ -15,12 +15,13 @@ pub struct Bird {
 
 impl Bird {
     pub fn new() -> Bird {
+        let mut rng = rand::thread_rng();
+        let x = 30.;
+        let y = rng.gen_range(48. * 2., 600. - (48. * 3.));
         let width = 48.;
         let height = 48.;
-        let mut rng = rand::thread_rng();
-        let y = rng.gen_range(48. * 2., 600. - (48. * 3.));
         Bird {
-            x: 30.,
+            x,
             y,
             vel: 0.,
             width,
@@ -32,6 +33,7 @@ impl Bird {
         self.vel = 6.;
     }
     pub fn update(&mut self, pipe_top: &Pipe, pipe_bottom: &Pipe) {
+        // println!("{}", self.y);
         if self.vel > -13. {
             self.vel -= 0.30;
         }
@@ -49,27 +51,18 @@ impl Bird {
 
         // get output
         if self.brain.get(2, 0) > 0.5 {
-            // println!("Jumped with data: {}", self.brain.get(2, 0));
             self.jump();
         }
     }
-    pub fn render(&self, ctx: &mut Context) -> GameResult<()> {
-        let rect = graphics::Rect::new(self.x, self.y, self.width, self.height);
-        let rect = graphics::Mesh::new_rectangle(
+    pub fn render(&self, ctx: &mut Context, mesh: &graphics::Mesh) -> GameResult<()> {
+        graphics::draw(
             ctx,
-            graphics::DrawMode::fill(),
-            rect,
-            graphics::Color::new(255., 0., 0., 1.),
+            mesh,
+            graphics::DrawParam::default().dest(mint::Point2 {
+                x: self.x,
+                y: self.y,
+            }),
         )?;
-        graphics::draw(ctx, &rect, graphics::DrawParam::default())?;
-        let rect = graphics::Rect::new(self.x, self.y, self.width, self.height);
-        let rect = graphics::Mesh::new_rectangle(
-            ctx,
-            graphics::DrawMode::stroke(2.),
-            rect,
-            graphics::BLACK,
-        )?;
-        graphics::draw(ctx, &rect, graphics::DrawParam::default())?;
         Ok(())
     }
 }

@@ -543,8 +543,6 @@ name = "game-prototype"
 version = "0.1.0"
 dependencies = [
  "ggez",
- "mint",
- "ndarray",
  "rand 0.7.3",
 ]
 
@@ -1160,19 +1158,6 @@ dependencies = [
  "num-traits 0.2.11",
  "rand 0.6.5",
  "typenum",
-]
-
-[[package]]
-name = "ndarray"
-version = "0.13.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ac06db03ec2f46ee0ecdca1a1c34a99c0d188a0d83439b84bf0cb4b386e4ab09"
-dependencies = [
- "matrixmultiply",
- "num-complex",
- "num-integer",
- "num-traits 0.2.11",
- "rawpointer",
 ]
 
 [[package]]
