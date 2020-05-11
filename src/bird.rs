@@ -44,16 +44,16 @@ impl Bird {
 
         // neural network stuff
         //  set inputs
-        self.brain.set_input(0, (self.y / 600.).abs());
-        self.brain.set_input(1, (pipe_top.y + pipe_top.height) / 600.);
-        self.brain.set_input(2, pipe_bottom.y / 600.);
-        self.brain.set_input(3, (self.vel + 13.) / 19.);
+        self.brain.set(0, (self.y / 600.).abs());
+        self.brain.set(1, (pipe_top.y + pipe_top.height) / 600.);
+        self.brain.set(2, pipe_bottom.y / 600.);
+        self.brain.set(3, (self.vel + 13.) / 19.);
 
         // process through network
-        self.brain.predict();
+        self.brain.process();
 
         // get output
-        if self.brain.get_output(0) >= 0.5 {
+        if self.brain.get(2, 0) >= 0.5 {
             self.jump();
         }
     }

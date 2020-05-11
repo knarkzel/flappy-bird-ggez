@@ -46,7 +46,8 @@ impl Game {
         let mut rng = rand::thread_rng();
         for bird in self.birds.iter_mut() {
             bird.exist = true;
-            bird.brain.mutate();
+            println!("{:?}", bird.brain);
+            // bird.brain.mutate();
             bird.y = rng.gen_range(48. * 2., 600. - (48. * 3.));
         }
         self.pipes = pipes;

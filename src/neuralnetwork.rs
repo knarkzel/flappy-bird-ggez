@@ -1,125 +1,75 @@
 use rand::Rng;
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone)]
 pub struct NeuralNetwork {
-    input_layer: Vec<Node>,
-    hidden_layer: Vec<Node>,
-    output_layer: Vec<Node>,
+    layers: Vec<Vec<Node>>,
 }
 
 impl NeuralNetwork {
     pub fn new(inputs: usize, hiddens: usize, outputs: usize) -> NeuralNetwork {
-        // create layers
-        let mut input_layer: Vec<Node> = (0..inputs).map(|_| Node::new()).collect();
-        let mut hidden_layer: Vec<Node> = (0..hiddens).map(|_| Node::new()).collect();
-        let mut output_layer: Vec<Node> = (0..outputs).map(|_| Node::new()).collect();
+        let mut layers: Vec<Vec<Node>> = vec![];
 
-        // input layers only need one edge for initial input, inital input -> input layer
-        // for node in input_layer.iter_mut() {
-        //     node.edges.push(Edge::new(0));
-        // }
+        layers.push(create_layer(inputs, hiddens));
+        layers.push(create_layer(hiddens, outputs));
+        layers.push(create_layer(outputs, 0));
 
-        // setup edges between rest of layers, input -> hidden and hidden -> output
-        init_edges(&input_layer, &mut hidden_layer);
-        init_edges(&hidden_layer, &mut output_layer);
-
-        // return all the created data
         NeuralNetwork {
-            input_layer,
-            hidden_layer,
-            output_layer,
+            layers,
         }
     }
-    pub fn predict(&mut self) {
-        // input layer -> hidden layer
-        for i in 0..self.hidden_layer.len() {
-            let mut sum = 0.;
-            for j in 0..(self.hidden_layer[i].edges.len() - 1) {
-                self.hidden_layer[i].edges[j].input = self.input_layer[self.hidden_layer[i].edges[j].index].output;
-                let weight = self.hidden_layer[i].edges[j].weight;
-                sum += self.hidden_layer[i].edges[j].input * weight;
+    pub fn get(&self, layer_index: usize, node_index: usize) -> f32 {
+        let layer = &self.layers[layer_index];
+        layer[node_index].data
+    }
+    pub fn set(&mut self, node_index: usize, input: f32) {
+        let layer = &mut self.layers[0];
+        layer[node_index].data = input;
+    }
+    pub fn process(&mut self) {
+        // hidden takes input from input, output takes input from hidden
+        // hence why it starts from 1 then onward
+        for layer in 1..self.layers.len() {
+            let mut data: Vec<f32> = vec![];
+            for node in 0..self.layers[layer].len() {
+                let mut sum = 0.;
+                let previous_layer = &self.layers[layer - 1];
+                for previous_node in 0..previous_layer.len() {
+                    sum += self.get_weighted(node, layer - 1, previous_node);
+                }
+                data.push(sigmoid(sum));
             }
-            self.hidden_layer[i].output = sigmoid(sum);
-        }
-        // hidden layer -> output layer
-        for i in 0..self.output_layer.len() {
-            let mut sum = 0.;
-            for j in 0..self.output_layer[i].edges.len() {
-                self.output_layer[i].edges[j].input = self.input_layer[self.output_layer[i].edges[j].index].output;
-                let weight = self.output_layer[i].edges[j].weight;
-                sum += self.output_layer[i].edges[j].input * weight;
+            for (i, data) in data.iter().enumerate() {
+                let current_layer = &mut self.layers[layer];
+                current_layer[i].data = *data;
             }
-            self.output_layer[i].output = sigmoid(sum);
         }
     }
-    pub fn set_input(&mut self, index: usize, input: f32) {
-        self.input_layer[index].output = input;
-    }
-    pub fn get_output(&self, index: usize) -> f32 {
-        self.output_layer[index].output
-    }
-    pub fn mutate(&mut self) {
-        for i in 0..self.hidden_layer.len() {
-            for j in 0..self.hidden_layer[i].edges.len() {
-                self.hidden_layer[i].edges[j].mutate();
-            }
-        }
-        for i in 0..self.output_layer.len() {
-            for j in 0..self.output_layer[i].edges.len() {
-                self.output_layer[i].edges[j].mutate();
-            }
-        }
+    fn get_weighted(&self, to_node_index: usize, layer_index: usize, from_node_index: usize) -> f32 {
+        let layer = &self.layers[layer_index];
+        let data = layer[from_node_index].data;
+        let weight = layer[from_node_index].weights[to_node_index];
+        data * weight
     }
 }
 
-#[derive(Clone, Debug)]
-struct Edge {
-    input: f32,
-    index: usize,
-    weight: f32,
-}
-
-impl Edge {
-    fn new(index: usize) -> Edge {
-        let mut rng = rand::thread_rng();
-        let input = 0.;
-        let weight = rng.gen_range(0., 1.);
-        Edge {
-            input,
-            index,
-            weight,
-        }
-    }
-    fn mutate(&mut self) {
-        let mut rng = rand::thread_rng();
-        self.weight = (self.weight + rng.gen_range(-0.1, 0.1)).max(0.).min(1.);
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct Node {
-    edges: Vec<Edge>,
-    output: f32,
+#[derive(Debug, Clone)]
+struct Node {
+    data: f32,
+    weights: Vec<f32>,
 }
 
 impl Node {
-    fn new() -> Node {
-        let edges: Vec<Edge> = vec![];
-        let output: f32 = 0.;
+    fn new(weights: Vec<f32>) -> Node {
         Node {
-            edges,
-            output,
+            data: 0.,
+            weights,
         }
     }
 }
 
-fn init_edges(previous_layer: &[Node], layer: &mut Vec<Node>) {
-    let edges = previous_layer.len();
-    for node in layer.iter_mut() {
-        for i in 0..edges {
-            node.edges.push(Edge::new(i));
-        }
-    }
+fn create_layer(amount: usize, next_layer_amount: usize) -> Vec<Node> {
+    let mut rng = rand::thread_rng();
+    (0..amount).map(|_| Node::new((0..next_layer_amount).map(|_| rng.gen_range(0., 1.)).collect())).collect()
 }
 
 fn sigmoid(x: f32) -> f32 {
