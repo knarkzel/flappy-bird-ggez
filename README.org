@@ -1,4 +1,4 @@
-#+title: AI plays Flappy Bird
+#+title: Neural Network plays Flappy Bird
 #+author: Odd-Harald Lillestø Myhren
 
 * How to build

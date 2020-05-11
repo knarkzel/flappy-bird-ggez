@@ -3,13 +3,20 @@ use game_prototype::pipe::*;
 use ggez::event::{self, EventHandler};
 use ggez::input::keyboard;
 use ggez::input::keyboard::KeyCode;
-use ggez::{graphics, Context, ContextBuilder, GameResult};
+use ggez::{graphics, mint, Context, ContextBuilder, GameResult};
 use rand::Rng;
+use std::{env, path};
 
-fn main() {
-    let (mut ctx, mut event_loop) = ContextBuilder::new("Title", "Game Author")
-        .build()
-        .expect("Unable to build context.");
+fn main() -> GameResult {
+    let mut cb = ContextBuilder::new("Flappy Birds", "Knarkzel");
+
+    if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
+        let mut path = path::PathBuf::from(manifest_dir);
+        path.push("resources");
+        cb = cb.add_resource_path(path);
+    }
+
+    let (mut ctx, mut event_loop) = cb.build()?;
 
     let mut my_game = Game::new(&mut ctx);
 
@@ -17,10 +24,12 @@ fn main() {
         Ok(_) => println!("Exited cleanly."),
         Err(e) => println!("Error occured: {}", e),
     }
+    Ok(())
 }
 
 struct Game {
-    bird_mesh: graphics::Mesh,
+    background: (f32, f32),
+    meshes: Vec<graphics::Image>,
     birds: Vec<Bird>,
     pipes: Vec<Pipes>,
     saved_birds: Vec<Bird>,
@@ -29,14 +38,24 @@ struct Game {
 
 impl Game {
     pub fn new(ctx: &mut Context) -> Game {
-        let bird_mesh = graphics::Rect::new(0., 0., 48., 48.);
-        let bird_mesh = graphics::Mesh::new_rectangle(
-            ctx,
-            graphics::DrawMode::fill(),
-            bird_mesh,
-            graphics::Color::new(255., 0., 0., 1.),
-        )
-        .unwrap();
+        // meshes
+        // let bird_mesh = graphics::Rect::new(0., 0., 48., 48.);
+        // let bird_mesh = graphics::Mesh::new_rectangle(
+        //     ctx,
+        //     graphics::DrawMode::fill(),
+        //     bird_mesh,
+        //     graphics::Color::new(255., 0., 0., 1.),
+        // )
+        // .unwrap();
+        let bird_mesh = graphics::Image::new(ctx, "/bird.png").unwrap();
+        let bird_jump = graphics::Image::new(ctx, "/bird-jump.png").unwrap();
+        let background = graphics::Image::new(ctx, "/background.png").unwrap();
+        let mut meshes: Vec<graphics::Image> = vec![];
+        meshes.push(bird_mesh);
+        meshes.push(background);
+        meshes.push(bird_jump);
+
+        // other
         let amount = 100;
         let birds = (0..amount).map(|_| Bird::new()).collect();
         let saved_birds: Vec<Bird> = vec![];
@@ -47,7 +66,8 @@ impl Game {
             Pipes::new(ctx, 800.),
         ];
         Game {
-            bird_mesh,
+            background: (0., 799.),
+            meshes,
             birds,
             pipes,
             saved_birds,
@@ -77,6 +97,7 @@ impl Game {
             self.birds.extend(clones);
         }
         self.pipes = pipes;
+        self.background = (0., 799.);
         self.saved_birds = vec![];
     }
 }
@@ -89,6 +110,14 @@ impl EventHandler for Game {
             1
         };
         for _ in 0..iterations {
+            if self.background.0 <= -800. {
+                self.background.0 = 799.;
+            }
+            if self.background.1 <= -800. {
+                self.background.1 = 799.;
+            }
+            self.background.0 -= 1.;
+            self.background.1 -= 1.;
             for pipes in self.pipes.iter_mut() {
                 pipes.update();
             }
@@ -119,14 +148,35 @@ impl EventHandler for Game {
         Ok(())
     }
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
-        graphics::clear(ctx, graphics::WHITE);
+        graphics::clear(ctx, graphics::Color::new(0., 0., 200., 1.));
+        graphics::draw(
+            ctx,
+            &self.meshes[1],
+            graphics::DrawParam::default().dest(mint::Point2 {
+                x: self.background.0,
+                y: 0.,
+            }),
+        )?;
+        graphics::draw(
+            ctx,
+            &self.meshes[1],
+            graphics::DrawParam::default().dest(mint::Point2 {
+                x: self.background.1,
+                y: 0.,
+            }),
+        )?;
         for pipes in self.pipes.iter() {
             pipes.pipe[0].render(ctx)?;
             pipes.pipe[1].render(ctx)?;
         }
         for bird in self.birds.iter() {
-            bird.render(ctx, &self.bird_mesh)?;
+            if bird.vel > 0. {
+                bird.render(ctx, &self.meshes[0])?;
+            } else {
+                bird.render(ctx, &self.meshes[2])?;
+            }
         }
+
         graphics::present(ctx)
     }
 }

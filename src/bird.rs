@@ -54,7 +54,7 @@ impl Bird {
             self.jump();
         }
     }
-    pub fn render(&self, ctx: &mut Context, mesh: &graphics::Mesh) -> GameResult<()> {
+    pub fn render(&self, ctx: &mut Context, mesh: &graphics::Image) -> GameResult<()> {
         graphics::draw(
             ctx,
             mesh,
