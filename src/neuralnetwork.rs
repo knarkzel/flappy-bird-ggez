@@ -13,7 +13,7 @@ impl NeuralNetwork {
         layers.push(create_layer(hiddens, outputs));
         layers.push(create_layer(outputs, 0));
 
-        println!("{:?}", layers);
+        // println!("{:?}", layers);
 
         NeuralNetwork {
             layers,
@@ -51,9 +51,12 @@ impl NeuralNetwork {
         for layer in 1..self.layers.len() {
             for node in self.layers[layer].iter_mut() {
                 for i in 0..node.weights.len() {
-                    if rng.gen_range(0., 1.) > 0.5 {
-                        node.weights[i] = (node.weights[i] + rng.gen_range(0., 1.)).max(0.).min(1.);
+                    if rng.gen_range(0., 1.) > 0.75 {
+                        node.weights[i] += rng.gen_range(-0.1, 0.1);
+                    } else if rng.gen_range(0., 1.) > 0.50 {
+                        node.weights[i] *= rng.gen_range(-0.1, 0.1);
                     }
+                    node.weights[i] = node.weights[i].max(-1.).min(1.);
                 }
             }
         }
@@ -83,7 +86,7 @@ impl Node {
 
 fn create_layer(amount: usize, next_layer_amount: usize) -> Vec<Node> {
     let mut rng = rand::thread_rng();
-    (0..amount).map(|_| Node::new((0..next_layer_amount).map(|_| rng.gen_range(0., 1.)).collect())).collect()
+    (0..amount).map(|_| Node::new((0..next_layer_amount).map(|_| rng.gen_range(-1., 1.)).collect())).collect()
 }
 
 fn sigmoid(x: f32) -> f32 {

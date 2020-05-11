@@ -10,8 +10,6 @@ pub struct Bird {
     pub vel: f32,
     pub width: f32,
     pub height: f32,
-    pub fitness: i32,
-    pub exist: bool,
     pub brain: NeuralNetwork,
 }
 
@@ -27,8 +25,6 @@ impl Bird {
             vel: 0.,
             width,
             height,
-            fitness: 0,
-            exist: true,
             brain: NeuralNetwork::new(4, 6, 1),
         }
     }
@@ -40,7 +36,6 @@ impl Bird {
             self.vel -= 0.30;
         }
         self.y -= self.vel;
-        self.fitness += 1;
 
         // neural network stuff
         //  set inputs
@@ -53,7 +48,8 @@ impl Bird {
         self.brain.process();
 
         // get output
-        if self.brain.get(2, 0) >= 0.5 {
+        if self.brain.get(2, 0) > 0.5 {
+            // println!("Jumped with data: {}", self.brain.get(2, 0));
             self.jump();
         }
     }

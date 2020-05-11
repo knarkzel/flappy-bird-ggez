@@ -2,6 +2,8 @@ use game_prototype::bird::*;
 use game_prototype::pipe::*;
 use ggez::event::{self, EventHandler};
 use ggez::{graphics, Context, ContextBuilder, GameResult};
+use ggez::input::keyboard;
+use ggez::input::keyboard::KeyCode;
 use rand::Rng;
 
 fn main() {
@@ -20,21 +22,22 @@ fn main() {
 struct Game {
     birds: Vec<Bird>,
     pipes: Vec<Pipes>,
+    saved_birds: Vec<Bird>,
     amount: i32,
-    dead: i32,
 }
 
 impl Game {
     pub fn new(_ctx: &mut Context) -> Game {
         let amount = 100;
         let birds = (0..amount).map(|_| Bird::new()).collect();
+        let saved_birds: Vec<Bird> = vec![];
         let pipes = vec![
             Pipes::new(200.),
             Pipes::new(400.),
             Pipes::new(600.),
             Pipes::new(800.),
         ];
-        Game { birds, pipes, amount, dead: 0 }
+        Game { birds, pipes, saved_birds, amount }
     }
     fn restart(&mut self) {
         let pipes = vec![
@@ -44,48 +47,53 @@ impl Game {
             Pipes::new(800.),
         ];
         let mut rng = rand::thread_rng();
-        for bird in self.birds.iter_mut() {
-            bird.exist = true;
-            println!("{:?}", bird.brain);
-            // bird.brain.mutate();
-            bird.y = rng.gen_range(48. * 2., 600. - (48. * 3.));
+        let take: i32 = 5;
+        let best_competors: Vec<Bird> = self.saved_birds.clone().drain(self.saved_birds.len() - take as usize ..).collect();
+        for bird in best_competors {
+            let mut clones: Vec<Bird> = (0..self.amount / take).map(|_| bird.clone()).collect();
+            for new_bird in clones.iter_mut() {
+                new_bird.brain.mutate();
+                new_bird.y = rng.gen_range(48. * 2., 600. - (48. * 3.));
+            }
+            self.birds.extend(clones);
         }
         self.pipes = pipes;
-        self.dead = 0;
+        self.saved_birds = vec![];
     }
 }
 
 impl EventHandler for Game {
-    fn update(&mut self, _: &mut Context) -> GameResult<()> {
-        for i in 0..self.birds.len() {
-            if do_collide(&self.birds[0], &self.pipes[0].pipe[0]) || do_collide(&self.birds[0], &self.pipes[0].pipe[1])
-                || self.birds[i].y + self.birds[i].height > 600. || self.birds[i].y < 0.
-            {
-                if self.birds[i].exist {
-                    self.dead += 1;
-                    self.birds[i].exist = false;
-                }
-            }
-        }
-        for bird in self.birds.iter_mut() {
-            if bird.exist {
+    fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
+        let iterations = if keyboard::is_key_pressed(ctx, KeyCode::Space) {
+            20
+        } else {
+            1
+        };
+        for _ in 0..iterations {
+            for bird in self.birds.iter_mut() {
                 bird.update(&self.pipes[0].pipe[0], &self.pipes[0].pipe[1]);
             }
-        }
-        if self.dead >= self.amount {
-           // take 10 best birds, make 10 copies of each then mutate slightly
-           // restart level then
-            // let birds = (0..self.amount).map(|_| Bird::new()).collect();
-            // self.birds.sort_by(|a, b| a.fitness.cmp(&b.fitness));
-            // println!("{:#?}", self.birds);
-            self.restart();
-        }
-        for pipes in self.pipes.iter_mut() {
-            pipes.update();
-        }
-        if self.pipes[0].pipe[0].x < 0. {
-            self.pipes.remove(0);
-            self.pipes.push(Pipes::new(800.));
+            let mut total = self.birds.len();
+            for i in 0..total {
+                if i <= total - 1 {
+                    if do_collide(&self.birds[0], &self.pipes[0].pipe[0]) || do_collide(&self.birds[0], &self.pipes[0].pipe[1])
+                        || self.birds[i].y + self.birds[i].height > 600. || self.birds[i].y < 0.
+                    {
+                        self.saved_birds.push(self.birds.remove(i));
+                        total -= 1;
+                    }
+                }
+            }
+            if self.saved_birds.len() >= self.amount as usize {
+                self.restart();
+            }
+            for pipes in self.pipes.iter_mut() {
+                pipes.update();
+            }
+            if self.pipes[0].pipe[0].x < 0. {
+                self.pipes.remove(0);
+                self.pipes.push(Pipes::new(800.));
+            }
         }
         Ok(())
     }
@@ -96,9 +104,7 @@ impl EventHandler for Game {
             pipes.pipe[1].render(ctx)?;
         }
         for bird in self.birds.iter() {
-            if bird.exist {
-                bird.render(ctx)?;
-            }
+            bird.render(ctx)?;
         }
         graphics::present(ctx)
     }

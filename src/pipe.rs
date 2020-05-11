@@ -47,11 +47,11 @@ pub struct Pipes {
 impl Pipes {
     pub fn new(x: f32) -> Pipes {
         let mut rng = rand::thread_rng();
-        let height = 32. + rng.gen_range(0., 600. - 32. * 7.);
+        let height = 32. + rng.gen_range(0., 600. - 32. * 10.);
         Pipes {
             pipe: vec![
                 Pipe::new(x, 0., height),
-                Pipe::new(x, height + 32. * 5., 600.),
+                Pipe::new(x, height + 32. * 8., 600.),
             ],
             speed: 2.,
         }
