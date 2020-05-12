@@ -21,8 +21,9 @@ impl NeuralNetwork {
         let layer = &self.layers[layer_index];
         layer[node_index].data
     }
-    pub fn set(&mut self, node_index: usize, input: f32) {
+    pub fn set(&mut self, node_index: usize, input: f32, bias: f32) {
         let layer = &mut self.layers[0];
+        layer[node_index].bias = bias;
         layer[node_index].data = input;
     }
     pub fn process(&mut self) {
@@ -49,10 +50,10 @@ impl NeuralNetwork {
         for layer in 1..self.layers.len() {
             for node in self.layers[layer].iter_mut() {
                 for i in 0..node.weights.len() {
-                    if rng.gen_range(0., 1.) > 0.75 {
-                        node.weights[i] += rng.gen_range(-0.1, 0.1);
-                    } else if rng.gen_range(0., 1.) > 0.50 {
-                        node.weights[i] *= rng.gen_range(-0.1, 0.1);
+                    if rng.gen_range(0., 1.) > 0.80 {
+                        node.weights[i] += rng.gen_range(-0.01, 0.01);
+                    } else if rng.gen_range(0., 1.) > 0.60 {
+                        node.weights[i] *= rng.gen_range(0., 0.1);
                     }
                     node.weights[i] = node.weights[i].max(-1.).min(1.);
                 }
@@ -67,20 +68,22 @@ impl NeuralNetwork {
     ) -> f32 {
         let layer = &self.layers[layer_index];
         let data = layer[from_node_index].data;
+        let bias = layer[from_node_index].bias;
         let weight = layer[from_node_index].weights[to_node_index];
-        data * weight
+        data * weight + bias
     }
 }
 
 #[derive(Debug, Clone)]
 struct Node {
     data: f32,
+    bias: f32,
     weights: Vec<f32>,
 }
 
 impl Node {
     fn new(weights: Vec<f32>) -> Node {
-        Node { data: 0., weights }
+        Node { data: 0., bias: 0., weights }
     }
 }
 

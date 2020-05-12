@@ -91,6 +91,7 @@ impl Game {
         for bird in best_competors {
             let mut clones: Vec<Bird> = (0..self.amount / take).map(|_| bird.clone()).collect();
             for new_bird in clones.iter_mut() {
+                new_bird.alive = 0;
                 new_bird.brain.mutate();
                 new_bird.y = rng.gen_range(48. * 2., 600. - (48. * 3.));
             }
@@ -137,11 +138,19 @@ impl EventHandler for Game {
                     to_remove.push(i);
                 }
             }
+            for i in 0..self.birds.len() {
+                if self.birds[i].alive > 10 * 60 && self.birds.len() <= self.amount as usize {
+                    self.birds[i].alive = 0;
+                    let mut new_bird = self.birds[i].clone();
+                    new_bird.brain.mutate();
+                    self.birds.push(new_bird);
+                }
+            }
             // remove stuff that collides
             for i in to_remove.iter().rev() {
                 self.saved_birds.push(self.birds.remove(*i));
             }
-            if self.saved_birds.len() >= self.amount as usize {
+            if self.birds.is_empty() {
                 self.restart(ctx);
             }
         }

@@ -7,6 +7,7 @@ use rand::Rng;
 pub struct Bird {
     pub x: f32,
     pub y: f32,
+    pub alive: i32,
     pub vel: f32,
     pub width: f32,
     pub height: f32,
@@ -23,6 +24,7 @@ impl Bird {
         Bird {
             x,
             y,
+            alive: 0,
             vel: 0.,
             width,
             height,
@@ -33,7 +35,7 @@ impl Bird {
         self.vel = 6.;
     }
     pub fn update(&mut self, pipe_top: &Pipe, pipe_bottom: &Pipe) {
-        // println!("{}", self.y);
+        self.alive += 1;
         if self.vel > -13. {
             self.vel -= 0.30;
         }
@@ -41,10 +43,10 @@ impl Bird {
 
         // neural network stuff
         //  set inputs
-        self.brain.set(0, (self.y / 600.).abs());
-        self.brain.set(1, (pipe_top.y + pipe_top.height) / 600.);
-        self.brain.set(2, pipe_bottom.y / 600.);
-        self.brain.set(3, (self.vel + 13.) / 19.);
+        self.brain.set(0, (self.y / 600.).abs(), 0.);
+        self.brain.set(1, (self.vel + 13.) / 19., 0.);
+        self.brain.set(2, pipe_top.y / 600., 0.);
+        self.brain.set(3, pipe_bottom.y / 600., 0.);
 
         // process through network
         self.brain.process();
@@ -55,13 +57,15 @@ impl Bird {
         }
     }
     pub fn render(&self, ctx: &mut Context, mesh: &graphics::Image) -> GameResult<()> {
+        let angle = (-(self.vel + 13.) / 19. + 1.) * 2.;
+        let offset = mint::Point2 {x: 0.5, y: 0.5};
         graphics::draw(
             ctx,
             mesh,
             graphics::DrawParam::default().dest(mint::Point2 {
-                x: self.x,
-                y: self.y,
-            }),
+                x: self.x + self.width / 2.,
+                y: self.y + self.height / 2.,
+            }).rotation(angle).offset(offset),
         )?;
         Ok(())
     }
