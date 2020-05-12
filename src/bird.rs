@@ -58,14 +58,17 @@ impl Bird {
     }
     pub fn render(&self, ctx: &mut Context, mesh: &graphics::Image) -> GameResult<()> {
         let angle = (-(self.vel + 13.) / 19. + 1.) * 2.;
-        let offset = mint::Point2 {x: 0.5, y: 0.5};
+        let offset = mint::Point2 { x: 0.5, y: 0.5 };
         graphics::draw(
             ctx,
             mesh,
-            graphics::DrawParam::default().dest(mint::Point2 {
-                x: self.x + self.width / 2.,
-                y: self.y + self.height / 2.,
-            }).rotation(angle).offset(offset),
+            graphics::DrawParam::default()
+                .dest(mint::Point2 {
+                    x: self.x + self.width / 2.,
+                    y: self.y + self.height / 2.,
+                })
+                .rotation(angle)
+                .offset(offset),
         )?;
         Ok(())
     }

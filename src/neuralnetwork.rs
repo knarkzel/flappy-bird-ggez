@@ -52,7 +52,6 @@ impl NeuralNetwork {
                 for i in 0..node.weights.len() {
                     if rng.gen_range(0., 1.) > 0.80 {
                         node.weights[i] += rng.gen_range(-0.01, 0.01);
-                    } else if rng.gen_range(0., 1.) > 0.60 {
                         node.weights[i] *= rng.gen_range(0., 0.1);
                     }
                     node.weights[i] = node.weights[i].max(-1.).min(1.);
@@ -83,7 +82,11 @@ struct Node {
 
 impl Node {
     fn new(weights: Vec<f32>) -> Node {
-        Node { data: 0., bias: 0., weights }
+        Node {
+            data: 0.,
+            bias: 0.,
+            weights,
+        }
     }
 }
 

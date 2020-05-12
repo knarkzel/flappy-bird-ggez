@@ -26,11 +26,7 @@ impl Pipe {
         }
     }
     pub fn render(&self, ctx: &mut Context) -> GameResult<()> {
-        let offset = if self.y == 0. {
-            600. - self.height
-        } else {
-            0.
-        };
+        let offset = if self.y == 0. { 600. - self.height } else { 0. };
         graphics::draw(
             ctx,
             &self.mesh,

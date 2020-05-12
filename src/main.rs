@@ -3,7 +3,7 @@ use game_prototype::pipe::*;
 use ggez::event::{self, EventHandler};
 use ggez::input::keyboard;
 use ggez::input::keyboard::KeyCode;
-use ggez::{graphics, mint, Context, ContextBuilder, GameResult};
+use ggez::{graphics, mint, timer, Context, ContextBuilder, GameResult};
 use rand::Rng;
 use std::{env, path};
 
@@ -30,6 +30,8 @@ fn main() -> GameResult {
 struct Game {
     background: (f32, f32),
     meshes: Vec<graphics::Image>,
+    text: (i32, graphics::Text),
+    generation: (i32, graphics::Text),
     birds: Vec<Bird>,
     pipes: Vec<Pipes>,
     saved_birds: Vec<Bird>,
@@ -65,9 +67,15 @@ impl Game {
             Pipes::new(ctx, 600.),
             Pipes::new(ctx, 800.),
         ];
+        let mut text = (0, graphics::Text::new("0"));
+        text.1.set_font(graphics::Font::default(), graphics::Scale::uniform(100.0));
+        let mut generation = (1, graphics::Text::new("Generation: 1"));
+        generation.1.set_font(graphics::Font::default(), graphics::Scale::uniform(50.0));
         Game {
             background: (0., 799.),
             meshes,
+            text,
+            generation,
             birds,
             pipes,
             saved_birds,
@@ -99,59 +107,73 @@ impl Game {
         }
         self.pipes = pipes;
         self.background = (0., 799.);
+        self.text = (0, graphics::Text::new("0"));
+        self.text.1.set_font(graphics::Font::default(), graphics::Scale::uniform(100.0));
+        self.generation.0 += 1;
+        self.generation.1 = graphics::Text::new(format!("Generation: {}", self.generation.0));
+        self.generation.1.set_font(graphics::Font::default(), graphics::Scale::uniform(50.0));
         self.saved_birds = vec![];
     }
 }
 
 impl EventHandler for Game {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
-        let iterations = if keyboard::is_key_pressed(ctx, KeyCode::Space) {
-            20
-        } else {
-            1
-        };
-        for _ in 0..iterations {
-            if self.background.0 <= -800. {
-                self.background.0 = 799.;
-            }
-            if self.background.1 <= -800. {
-                self.background.1 = 799.;
-            }
-            self.background.0 -= 1.;
-            self.background.1 -= 1.;
-            for pipes in self.pipes.iter_mut() {
-                pipes.update();
-            }
-            if self.pipes[0].pipe[0].x < 0. {
-                self.pipes.remove(0);
-                self.pipes.push(Pipes::new(ctx, 800.));
-            }
-            for bird in self.birds.iter_mut() {
-                bird.update(&self.pipes[0].pipe[0], &self.pipes[0].pipe[1]);
-            }
-            // get stuff that collides
-            let mut to_remove: Vec<usize> = vec![];
-            for (i, bird) in self.birds.iter().enumerate() {
-                let first_pipe = &self.pipes[0].pipe[0];
-                let second_pipe = &self.pipes[0].pipe[1];
-                if do_collide(bird, first_pipe) || do_collide(bird, second_pipe) {
-                    to_remove.push(i);
+        const DESIRED_FPS: u32 = 60;
+
+        while timer::check_update_time(ctx, DESIRED_FPS) {
+            let iterations = if keyboard::is_key_pressed(ctx, KeyCode::Space) {
+                250
+            } else {
+                1
+            };
+            for _ in 0..iterations {
+                if self.background.0 <= -800. {
+                    self.background.0 = 799.;
                 }
-            }
-            for i in 0..self.birds.len() {
-                if self.birds[i].alive > 10 * 60 && self.birds.len() <= self.amount as usize {
-                    self.birds[i].alive = 0;
-                    let mut new_bird = self.birds[i].clone();
-                    new_bird.brain.mutate();
-                    self.birds.push(new_bird);
+                if self.background.1 <= -800. {
+                    self.background.1 = 799.;
                 }
-            }
-            // remove stuff that collides
-            for i in to_remove.iter().rev() {
-                self.saved_birds.push(self.birds.remove(*i));
-            }
-            if self.birds.is_empty() {
-                self.restart(ctx);
+                self.background.0 -= 1.;
+                self.background.1 -= 1.;
+                for pipes in self.pipes.iter_mut() {
+                    pipes.update();
+                }
+                if self.pipes[0].pipe[0].x < 0. {
+                    self.text.0 += 1;
+                    self.text.1 = graphics::Text::new(self.text.0.to_string());
+                    self.text.1.set_font(graphics::Font::default(), graphics::Scale::uniform(100.0));
+                    self.pipes.remove(0);
+                    self.pipes.push(Pipes::new(ctx, 800.));
+                }
+                for bird in self.birds.iter_mut() {
+                    bird.update(&self.pipes[0].pipe[0], &self.pipes[0].pipe[1]);
+                }
+                // get stuff that collides
+                let mut to_remove: Vec<usize> = vec![];
+                for (i, bird) in self.birds.iter().enumerate() {
+
+
+let first_pipe = &self.pipes[0].pipe[0];
+                    let second_pipe = &self.pipes[0].pipe[1];
+                    if do_collide(bird, first_pipe) || do_collide(bird, second_pipe) {
+                        to_remove.push(i);
+                    }
+                }
+                for i in 0..self.birds.len() {
+                    if self.birds[i].alive > 10 * 60 && self.birds.len() <= self.amount as usize {
+                        self.birds[i].alive = 0;
+                        let mut new_bird = self.birds[i].clone();
+                        new_bird.brain.mutate();
+                        self.birds.push(new_bird);
+                    }
+                }
+                // remove stuff that collides
+                for i in to_remove.iter().rev() {
+                    self.saved_birds.push(self.birds.remove(*i));
+                }
+                if self.birds.is_empty() {
+                    self.restart(ctx);
+                }
             }
         }
         Ok(())
@@ -185,6 +207,25 @@ impl EventHandler for Game {
                 bird.render(ctx, &self.meshes[2])?;
             }
         }
+        // draw score
+        graphics::draw(
+            ctx,
+            &self.text.1,
+            graphics::DrawParam::default().dest(mint::Point2 {
+                x: (800. / 2.) - 25. * (self.text.0.to_string().len() + 1) as f32,
+                y: 15.,
+            }),
+        )?;
+
+        // draw generation
+        graphics::draw(
+            ctx,
+            &self.generation.1,
+            graphics::DrawParam::default().dest(mint::Point2 {
+                x: 800. - 270. - 30. * self.generation.0.to_string().len() as f32,
+                y: 550.,
+            }),
+        )?;
 
         graphics::present(ctx)
     }
